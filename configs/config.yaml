@@ -1,6 +1,5 @@
 # VisionGuard Safety AI — central configuration.
 # Every tunable value lives here so no magic numbers hide in the code.
-# New sections are added as each feature is built.
 
 app:
   name: "VisionGuard Safety AI"
@@ -14,12 +13,50 @@ paths:
 
 video:
   # Path to a video file, or an integer camera index (0 = default webcam)
-  source: "data/videos/sample.mp4"
+  source: "data/videos/construction_steelwork.mp4"
   frame_skip: 1              # process every Nth frame (1 = every frame)
   resize_width: 1280         # downscale frames to this width; null = keep original
 
 detection:
-  model: "yolo11n.pt"        # placeholder — replaced by PPE-trained weights in Feature 1
-  confidence_threshold: 0.4  # discard detections below this confidence
+  # PPE model: yihong1120/Construction-Hazard-Detection (AGPL-3.0)
+  # Classes: Hardhat, Mask, NO-Hardhat, NO-Mask, NO-Safety Vest, Person,
+  #          Safety Cone, Safety Vest, Machinery, Utility Pole, Vehicle
+  model_path: "models/ppe_yolo11s.pt"
+  confidence_threshold: 0.35 # discard detections below this confidence
   iou_threshold: 0.5         # non-max-suppression overlap threshold
   device: "auto"             # auto | cpu | cuda
+
+tracking:
+  track_activation_threshold: 0.35  # min confidence to start a new track
+  lost_track_buffer: 30             # frames to keep a lost track alive (occlusion tolerance)
+  minimum_matching_threshold: 0.8   # IoU-based matching strictness
+  trajectory_length: 90             # ground points kept per track (for trails/heatmap)
+
+ppe:
+  required_equipment: ["helmet", "vest"]  # what every worker must wear
+  window_seconds: 2.0        # rolling window used to smooth per-frame PPE flicker
+  violation_ratio: 0.6       # fraction of window frames missing PPE to raise an alert
+  min_observations: 10       # frames a worker must be seen before judging compliance
+  cooldown_seconds: 30.0     # min gap between repeat alerts for same worker + item
+
+zones:
+  definitions_file: "configs/zones.json"  # created with scripts/define_zones.py
+  dwell_alert_seconds: 8.0   # loitering inside a zone this long raises a second alert
+
+fall:
+  model_path: "models/yolo11n-pose.pt"
+  torso_angle_threshold: 55.0   # torso tilt from vertical (degrees) considered "down"
+  aspect_ratio_threshold: 1.1   # bbox width/height supporting a lying posture
+  confirm_seconds: 2.0          # person must stay down this long to confirm a fall
+  cooldown_seconds: 60.0        # min gap between repeat fall alerts for same worker
+  keypoint_confidence: 0.3      # ignore keypoints below this confidence
+
+events:
+  database_path: "outputs/events.db"
+  screenshots_dir: "outputs/screenshots"
+
+output:
+  annotated_dir: "outputs/annotated"
+  heatmap_dir: "outputs/heatmaps"
+  reports_dir: "outputs/reports"
+  heatmap_grid: [64, 36]     # heatmap resolution (cols, rows)

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-# Project root = two levels above this file's package (src/visionguard/utils -> root)
+# Project root = three levels above this file (src/visionguard/utils -> root)
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "configs" / "config.yaml"
 
@@ -49,10 +49,69 @@ class VideoSettings:
 class DetectionSettings:
     """Object detection model and thresholds."""
 
-    model: str
+    model_path: Path
     confidence_threshold: float
     iou_threshold: float
     device: str
+
+
+@dataclass(frozen=True)
+class TrackingSettings:
+    """ByteTrack multi-object tracking parameters."""
+
+    track_activation_threshold: float
+    lost_track_buffer: int
+    minimum_matching_threshold: float
+    trajectory_length: int
+
+
+@dataclass(frozen=True)
+class PPESettings:
+    """PPE compliance engine thresholds."""
+
+    required_equipment: tuple[str, ...]
+    window_seconds: float
+    violation_ratio: float
+    min_observations: int
+    cooldown_seconds: float
+
+
+@dataclass(frozen=True)
+class ZoneSettings:
+    """Restricted-zone monitoring settings."""
+
+    definitions_file: Path
+    dwell_alert_seconds: float
+
+
+@dataclass(frozen=True)
+class FallSettings:
+    """Pose-based fall detection thresholds."""
+
+    model_path: Path
+    torso_angle_threshold: float
+    aspect_ratio_threshold: float
+    confirm_seconds: float
+    cooldown_seconds: float
+    keypoint_confidence: float
+
+
+@dataclass(frozen=True)
+class EventSettings:
+    """Event persistence locations."""
+
+    database_path: Path
+    screenshots_dir: Path
+
+
+@dataclass(frozen=True)
+class OutputSettings:
+    """Where generated artifacts (videos, heatmaps, reports) are written."""
+
+    annotated_dir: Path
+    heatmap_dir: Path
+    reports_dir: Path
+    heatmap_grid: tuple[int, int]
 
 
 @dataclass(frozen=True)
@@ -63,6 +122,12 @@ class AppConfig:
     paths: PathSettings
     video: VideoSettings
     detection: DetectionSettings
+    tracking: TrackingSettings
+    ppe: PPESettings
+    zones: ZoneSettings
+    fall: FallSettings
+    events: EventSettings
+    output: OutputSettings
 
 
 def _resolve(path_value: str) -> Path:
@@ -112,9 +177,48 @@ def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> AppConfig:
             ),
         ),
         detection=DetectionSettings(
-            model=raw["detection"]["model"],
+            model_path=_resolve(raw["detection"]["model_path"]),
             confidence_threshold=float(raw["detection"]["confidence_threshold"]),
             iou_threshold=float(raw["detection"]["iou_threshold"]),
             device=raw["detection"]["device"],
+        ),
+        tracking=TrackingSettings(
+            track_activation_threshold=float(
+                raw["tracking"]["track_activation_threshold"]
+            ),
+            lost_track_buffer=int(raw["tracking"]["lost_track_buffer"]),
+            minimum_matching_threshold=float(
+                raw["tracking"]["minimum_matching_threshold"]
+            ),
+            trajectory_length=int(raw["tracking"]["trajectory_length"]),
+        ),
+        ppe=PPESettings(
+            required_equipment=tuple(raw["ppe"]["required_equipment"]),
+            window_seconds=float(raw["ppe"]["window_seconds"]),
+            violation_ratio=float(raw["ppe"]["violation_ratio"]),
+            min_observations=int(raw["ppe"]["min_observations"]),
+            cooldown_seconds=float(raw["ppe"]["cooldown_seconds"]),
+        ),
+        zones=ZoneSettings(
+            definitions_file=_resolve(raw["zones"]["definitions_file"]),
+            dwell_alert_seconds=float(raw["zones"]["dwell_alert_seconds"]),
+        ),
+        fall=FallSettings(
+            model_path=_resolve(raw["fall"]["model_path"]),
+            torso_angle_threshold=float(raw["fall"]["torso_angle_threshold"]),
+            aspect_ratio_threshold=float(raw["fall"]["aspect_ratio_threshold"]),
+            confirm_seconds=float(raw["fall"]["confirm_seconds"]),
+            cooldown_seconds=float(raw["fall"]["cooldown_seconds"]),
+            keypoint_confidence=float(raw["fall"]["keypoint_confidence"]),
+        ),
+        events=EventSettings(
+            database_path=_resolve(raw["events"]["database_path"]),
+            screenshots_dir=_resolve(raw["events"]["screenshots_dir"]),
+        ),
+        output=OutputSettings(
+            annotated_dir=_resolve(raw["output"]["annotated_dir"]),
+            heatmap_dir=_resolve(raw["output"]["heatmap_dir"]),
+            reports_dir=_resolve(raw["output"]["reports_dir"]),
+            heatmap_grid=tuple(int(v) for v in raw["output"]["heatmap_grid"]),
         ),
     )
