@@ -1,0 +1,8 @@
+# VisionGuard Safety AI — pinned dependencies (Python 3.11).
+# Regenerate pins after adding a package: pip freeze | findstr /i "<name>"
+
+# Core
+PyYAML==6.0.3
+
+# Development / testing
+pytest==9.1.1

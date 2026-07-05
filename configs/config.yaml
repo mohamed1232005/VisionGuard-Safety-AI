@@ -1,0 +1,25 @@
+# VisionGuard Safety AI — central configuration.
+# Every tunable value lives here so no magic numbers hide in the code.
+# New sections are added as each feature is built.
+
+app:
+  name: "VisionGuard Safety AI"
+  log_level: "INFO"          # DEBUG | INFO | WARNING | ERROR
+  log_dir: "outputs/logs"
+
+paths:
+  data_dir: "data"
+  models_dir: "models"
+  outputs_dir: "outputs"
+
+video:
+  # Path to a video file, or an integer camera index (0 = default webcam)
+  source: "data/videos/sample.mp4"
+  frame_skip: 1              # process every Nth frame (1 = every frame)
+  resize_width: 1280         # downscale frames to this width; null = keep original
+
+detection:
+  model: "yolo11n.pt"        # placeholder — replaced by PPE-trained weights in Feature 1
+  confidence_threshold: 0.4  # discard detections below this confidence
+  iou_threshold: 0.5         # non-max-suppression overlap threshold
+  device: "auto"             # auto | cpu | cuda

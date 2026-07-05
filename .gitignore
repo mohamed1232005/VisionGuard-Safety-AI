@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environment
+.venv/
+venv/
+
+# Model weights (large binaries — document download steps in README instead)
+*.pt
+*.onnx
+*.engine
+
+# Data, weights & generated outputs (screenshots, clips, reports, logs).
+# Exclude contents but re-include directories + .gitkeep so the folder
+# structure stays visible in git (a file can't be un-ignored if its parent
+# directory is ignored, hence the /** + !/**/ pattern).
+data/**
+models/**
+outputs/**
+!data/**/
+!models/**/
+!outputs/**/
+!data/**/.gitkeep
+!models/**/.gitkeep
+!outputs/**/.gitkeep
+
+# IDE / OS noise
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
