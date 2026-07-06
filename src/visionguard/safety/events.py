@@ -18,6 +18,7 @@ class EventType(str, Enum):
     ZONE_INTRUSION = "zone_intrusion"
     ZONE_DWELL = "zone_dwell"
     FALL = "fall"
+    PROXIMITY = "proximity"
 
 
 class Severity(str, Enum):
@@ -29,11 +30,14 @@ class Severity(str, Enum):
 
 
 # Default severity per event type (falls are always emergencies).
+# Proximity defaults to WARNING; the proximity monitor overrides to CRITICAL
+# for high-risk (very close) encounters.
 DEFAULT_SEVERITY: dict[EventType, Severity] = {
     EventType.PPE_VIOLATION: Severity.WARNING,
     EventType.ZONE_INTRUSION: Severity.WARNING,
     EventType.ZONE_DWELL: Severity.WARNING,
     EventType.FALL: Severity.CRITICAL,
+    EventType.PROXIMITY: Severity.WARNING,
 }
 
 # Recommended action shown in incident reports, per event type.
@@ -53,6 +57,10 @@ RECOMMENDED_ACTIONS: dict[EventType, str] = {
     EventType.FALL: (
         "EMERGENCY: send first-aid responders to the location immediately and "
         "verify the worker's condition. Preserve the scene for investigation."
+    ),
+    EventType.PROXIMITY: (
+        "Alert the vehicle operator and the worker immediately; enforce the "
+        "site's minimum separation distance and review pedestrian routes."
     ),
 }
 
@@ -83,13 +91,15 @@ class SafetyEvent:
     description: str
     confidence: float = 1.0
     zone_name: str | None = None
-    severity: Severity = field(default=Severity.WARNING)
+    severity: Severity | None = None
     wall_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     screenshot_path: str | None = None
 
     def __post_init__(self) -> None:
-        # Apply the canonical severity unless a caller overrode it explicitly.
-        self.severity = DEFAULT_SEVERITY.get(self.event_type, self.severity)
+        # Apply the canonical severity only when the caller didn't choose one
+        # (e.g. the proximity monitor escalates high-risk events to CRITICAL).
+        if self.severity is None:
+            self.severity = DEFAULT_SEVERITY.get(self.event_type, Severity.WARNING)
 
     @property
     def recommended_action(self) -> str:

@@ -1,0 +1,6 @@
+{
+  "reference_size": [1280, 720],
+  "image_points": [[300, 700], [980, 700], [860, 320], [420, 320]],
+  "world_points": [[0, 0], [12, 0], [12, 20], [0, 20]],
+  "_note": "DEMO calibration with estimated (not measured) distances, so the proximity feature is demonstrable on the sample video. For real deployments, delete this file and run scripts/calibrate_camera.py with measured ground points."
+}

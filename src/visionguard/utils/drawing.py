@@ -100,6 +100,19 @@ def draw_alert_banner(
         cv2.putText(frame, text, (10, 22 + i * 26), _FONT, 0.6, color, 2)
 
 
+def draw_proximity_line(frame: np.ndarray, pair: "ProximityPair") -> None:
+    """Distance line between a worker and a vehicle, colored by risk level."""
+    from visionguard.safety.proximity import RiskLevel  # avoid import cycle
+
+    color = (0, 0, 255) if pair.level is RiskLevel.HIGH else (0, 165, 255)
+    a = pair.worker.box.ground_point
+    b = pair.vehicle.box.ground_point
+    ax, ay, bx, by = int(a[0]), int(a[1]), int(b[0]), int(b[1])
+    cv2.line(frame, (ax, ay), (bx, by), color, 2)
+    midpoint = ((ax + bx) // 2, (ay + by) // 2)
+    _label(frame, f"{pair.distance_m:.1f} m", midpoint, color, scale=0.55)
+
+
 def draw_hud(frame: np.ndarray, lines: list[str]) -> None:
     """Small status panel (compliance %, counts, FPS) in the bottom-left."""
     if not lines:

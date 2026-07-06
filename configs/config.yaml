@@ -51,6 +51,32 @@ fall:
   cooldown_seconds: 60.0        # min gap between repeat fall alerts for same worker
   keypoint_confidence: 0.3      # ignore keypoints below this confidence
 
+proximity:
+  # Created with scripts/calibrate_camera.py (>= 4 ground points with known
+  # real-world positions). Without it, proximity monitoring stays idle.
+  calibration_file: "configs/calibration.json"
+  high_risk_distance_m: 2.0    # closer than this = critical near-miss
+  medium_risk_distance_m: 5.0  # closer than this = warning
+  cooldown_seconds: 20.0       # min gap between repeat alerts per pair+level
+
+risk_score:
+  window_seconds: 60.0         # events older than this stop contributing
+  weights:                     # score points added per event (decay linearly)
+    ppe_violation: 8
+    zone_intrusion: 12
+    zone_dwell: 6
+    fall: 45
+    proximity: 10              # medium-risk proximity
+    proximity_high: 25         # high-risk proximity (near miss)
+
+assistant:
+  # LLM used to synthesize answers (needs ANTHROPIC_API_KEY in the environment).
+  # Without a key the assistant still works in retrieval-only mode.
+  model: "claude-opus-4-8"
+  max_tokens: 1024
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  top_k: 6                   # retrieved events per question
+
 events:
   database_path: "outputs/events.db"
   screenshots_dir: "outputs/screenshots"

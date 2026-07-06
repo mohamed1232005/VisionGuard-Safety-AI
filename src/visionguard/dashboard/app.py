@@ -16,6 +16,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from visionguard.assistant.assistant import SafetyAssistant
 from visionguard.pipeline import SafetyPipeline
 from visionguard.reporting.pdf import IncidentReportBuilder
 from visionguard.storage.event_store import EventStore, RunRecord
@@ -117,18 +118,23 @@ top_violation = (
 )
 unique = stats.get("unique_counts", {})
 
-k1, k2, k3, k4, k5 = st.columns(5)
-k1.metric("PPE compliance", f"{(run.compliance_rate or 0) * 100:.1f}%")
-k2.metric("Safety events", len(events))
-k3.metric("Workers seen", unique.get("worker", 0))
-k4.metric("Most dangerous zone", stats.get("most_dangerous_zone") or "—")
-k5.metric("Top violation", top_violation)
+risk = stats.get("risk_score") or {}
+peak_risk = risk.get("peak", 0)
+
+k1, k2, k3, k4, k5, k6 = st.columns(6)
+k1.metric("Peak risk score", f"{peak_risk:.0f}/100")
+k2.metric("PPE compliance", f"{(run.compliance_rate or 0) * 100:.1f}%")
+k3.metric("Safety events", len(events))
+k4.metric("Workers seen", unique.get("worker", 0))
+k5.metric("Most dangerous zone", stats.get("most_dangerous_zone") or "—")
+k6.metric("Top violation", top_violation)
 
 # --------------------------------------------------------------------- #
 # Tabs
 # --------------------------------------------------------------------- #
-video_tab, alerts_tab, timeline_tab, heatmap_tab, report_tab = st.tabs(
-    ["📹 Annotated video", "🚨 Alerts", "📈 Timeline", "🔥 Heatmap", "📄 Report"]
+video_tab, alerts_tab, timeline_tab, heatmap_tab, report_tab, assistant_tab = st.tabs(
+    ["📹 Annotated video", "🚨 Alerts", "📈 Timeline", "🔥 Heatmap", "📄 Report",
+     "🤖 Assistant"]
 )
 
 with video_tab:
@@ -179,6 +185,17 @@ with alerts_tab:
                 st.image(chosen.screenshot_path, width="stretch")
 
 with timeline_tab:
+    risk_timeline = risk.get("timeline") or []
+    if risk_timeline:
+        risk_frame = pd.DataFrame(risk_timeline, columns=["Video time (s)", "Risk score"])
+        risk_figure = px.area(
+            risk_frame,
+            x="Video time (s)",
+            y="Risk score",
+            title="Safety Risk Score (0–100) over the video",
+            range_y=[0, 100],
+        )
+        st.plotly_chart(risk_figure, width="stretch")
     if not events:
         st.info("No events to plot.")
     else:
@@ -228,3 +245,38 @@ with report_tab:
             file_name=Path(pdf_path).name,
             mime="application/pdf",
         )
+
+with assistant_tab:
+    st.write(
+        "Ask questions about this run's incidents in plain language — e.g. "
+        "*How many helmet violations happened?*, *Which zone had the most "
+        "incidents?*, *Summarize today's safety issues.*"
+    )
+
+    @st.cache_resource
+    def get_assistant() -> SafetyAssistant:
+        return SafetyAssistant(store, get_config().assistant)
+
+    history_key = f"assistant_history_{run.id}"
+    history = st.session_state.setdefault(history_key, [])
+
+    for entry in history:
+        with st.chat_message(entry["role"]):
+            st.markdown(entry["text"])
+
+    question = st.chat_input("Ask about this run's safety events…")
+    if question:
+        history.append({"role": "user", "text": question})
+        with st.chat_message("user"):
+            st.markdown(question)
+        with st.chat_message("assistant"):
+            with st.spinner("Consulting the incident history…"):
+                result = get_assistant().answer(question, run.id)
+            st.markdown(result.text)
+            if result.sources:
+                with st.expander(f"Evidence ({len(result.sources)} incidents)"):
+                    for source in result.sources:
+                        st.markdown(
+                            f"- `[{source.timestamp_str()}]` {source.description}"
+                        )
+        history.append({"role": "assistant", "text": result.text})

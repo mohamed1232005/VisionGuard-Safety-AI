@@ -97,6 +97,34 @@ class FallSettings:
 
 
 @dataclass(frozen=True)
+class ProximitySettings:
+    """Worker-vehicle proximity thresholds (real-world meters)."""
+
+    calibration_file: Path
+    high_risk_distance_m: float
+    medium_risk_distance_m: float
+    cooldown_seconds: float
+
+
+@dataclass(frozen=True)
+class RiskScoreSettings:
+    """Safety Risk Score weighting."""
+
+    window_seconds: float
+    weights: dict[str, float]
+
+
+@dataclass(frozen=True)
+class AssistantSettings:
+    """RAG safety assistant configuration."""
+
+    model: str
+    max_tokens: int
+    embedding_model: str
+    top_k: int
+
+
+@dataclass(frozen=True)
 class EventSettings:
     """Event persistence locations."""
 
@@ -126,6 +154,9 @@ class AppConfig:
     ppe: PPESettings
     zones: ZoneSettings
     fall: FallSettings
+    proximity: ProximitySettings
+    risk_score: RiskScoreSettings
+    assistant: AssistantSettings
     events: EventSettings
     output: OutputSettings
 
@@ -210,6 +241,25 @@ def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> AppConfig:
             confirm_seconds=float(raw["fall"]["confirm_seconds"]),
             cooldown_seconds=float(raw["fall"]["cooldown_seconds"]),
             keypoint_confidence=float(raw["fall"]["keypoint_confidence"]),
+        ),
+        proximity=ProximitySettings(
+            calibration_file=_resolve(raw["proximity"]["calibration_file"]),
+            high_risk_distance_m=float(raw["proximity"]["high_risk_distance_m"]),
+            medium_risk_distance_m=float(raw["proximity"]["medium_risk_distance_m"]),
+            cooldown_seconds=float(raw["proximity"]["cooldown_seconds"]),
+        ),
+        risk_score=RiskScoreSettings(
+            window_seconds=float(raw["risk_score"]["window_seconds"]),
+            weights={
+                name: float(value)
+                for name, value in raw["risk_score"]["weights"].items()
+            },
+        ),
+        assistant=AssistantSettings(
+            model=raw["assistant"]["model"],
+            max_tokens=int(raw["assistant"]["max_tokens"]),
+            embedding_model=raw["assistant"]["embedding_model"],
+            top_k=int(raw["assistant"]["top_k"]),
         ),
         events=EventSettings(
             database_path=_resolve(raw["events"]["database_path"]),

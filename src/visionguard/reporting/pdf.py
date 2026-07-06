@@ -112,6 +112,21 @@ class IncidentReportBuilder:
                                      f"{unique.get('machinery', 0)}"],
             ["Falls detected", str(stats.get("falls_detected", 0))],
         ]
+        risk = stats.get("risk_score") or {}
+        if risk:
+            rows.append(
+                ["Peak risk score",
+                 f"{risk.get('peak', 0):.0f}/100 at {risk.get('peak_time', 0)}s"]
+            )
+        proximity = stats.get("proximity")
+        if proximity:
+            min_distance = proximity.get("min_distance_m")
+            rows.append(
+                ["Worker-vehicle near misses",
+                 f"{proximity.get('near_misses', 0)} "
+                 f"(closest: {min_distance} m)" if min_distance is not None
+                 else str(proximity.get('near_misses', 0))]
+            )
         table = Table(rows, colWidths=[6 * cm, 10 * cm])
         table.setStyle(
             TableStyle(

@@ -24,7 +24,10 @@ from visionguard.detection.types import PPE_CLASSES, ObjectClass
 from visionguard.safety.events import SafetyEvent
 from visionguard.safety.falls import FallDetector
 from visionguard.safety.ppe import PPEComplianceEngine
+from visionguard.safety.proximity import ProximityMonitor
+from visionguard.safety.risk import RiskScoreCalculator, risk_band
 from visionguard.safety.zones import ZoneMonitor, load_zones
+from visionguard.spatial.homography import load_ground_plane
 from visionguard.storage.event_store import EventStore
 from visionguard.tracking.tracker import Tracker
 from visionguard.utils.config import AppConfig
@@ -32,6 +35,7 @@ from visionguard.utils.drawing import (
     draw_alert_banner,
     draw_hud,
     draw_ppe_evidence,
+    draw_proximity_line,
     draw_tracked_object,
     draw_zones,
 )
@@ -65,6 +69,7 @@ class SafetyPipeline:
         self._detector = Detector(config.detection)
         self._pose = PoseEstimator(config.fall, device=config.detection.device)
         self._zones = load_zones(config.zones.definitions_file)
+        self._ground_plane = load_ground_plane(config.proximity.calibration_file)
         self._store = EventStore(config.events.database_path)
 
     @property
@@ -102,6 +107,14 @@ class SafetyPipeline:
             ppe_engine = PPEComplianceEngine(config.ppe, fps=effective_fps)
             zone_monitor = ZoneMonitor(self._zones, config.zones)
             fall_detector = FallDetector(config.fall)
+            proximity_monitor = (
+                ProximityMonitor(config.proximity, self._ground_plane)
+                if self._ground_plane is not None
+                else None
+            )
+            risk_calculator = RiskScoreCalculator(config.risk_score)
+            risk_timeline: list[tuple[float, float]] = []
+            last_risk_sample = -1.0
 
             heat_cols, heat_rows = config.output.heatmap_grid
             heatmap = np.zeros((heat_rows, heat_cols), dtype=np.float64)
@@ -138,6 +151,19 @@ class SafetyPipeline:
                     new_events += fall_detector.update(
                         frame_index, video_time, workers, poses
                     )
+                    close_pairs = []
+                    if proximity_monitor is not None:
+                        proximity_events, close_pairs = proximity_monitor.update(
+                            frame_index, video_time, tracked, width, height
+                        )
+                        new_events += proximity_events
+
+                    # ---- Risk score --------------------------------------- #
+                    risk_calculator.add_events(new_events)
+                    risk_now = risk_calculator.score(video_time)
+                    if video_time - last_risk_sample >= 1.0:
+                        risk_timeline.append((round(video_time, 1), risk_now))
+                        last_risk_sample = video_time
 
                     # ---- Heatmap accumulation --------------------------- #
                     for worker in workers:
@@ -153,6 +179,8 @@ class SafetyPipeline:
                     for det in detections:
                         if det.object_class in PPE_CLASSES:
                             draw_ppe_evidence(frame, det)
+                    for pair in close_pairs:
+                        draw_proximity_line(frame, pair)
 
                     # ---- Event persistence (screenshot AFTER annotation,
                     #      so evidence images show boxes and IDs) ---------- #
@@ -175,6 +203,7 @@ class SafetyPipeline:
                     draw_hud(
                         frame,
                         [
+                            f"Risk score: {risk_now:.0f} ({risk_band(risk_now)})",
                             f"PPE compliance: {ppe_engine.stats.compliance_rate:.0%}",
                             f"Workers: {len(workers)}  Events: {events_total}",
                             f"Processing: {meter.fps:.1f} FPS",
@@ -217,6 +246,23 @@ class SafetyPipeline:
             "zone_dwell_alerts": zone_monitor.stats.dwell_alerts,
             "most_dangerous_zone": zone_monitor.stats.most_dangerous_zone(),
             "falls_detected": fall_detector.falls_detected,
+            "proximity": (
+                {
+                    "near_misses": proximity_monitor.stats.near_misses,
+                    "medium_alerts": proximity_monitor.stats.medium_alerts,
+                    "min_distance_m": proximity_monitor.stats.min_distance_m,
+                }
+                if proximity_monitor is not None
+                else None  # camera not calibrated
+            ),
+            "risk_score": {
+                "final": risk_calculator.score(
+                    frames_processed / effective_fps if effective_fps else 0.0
+                ),
+                "peak": risk_calculator.peak_score,
+                "peak_time": round(risk_calculator.peak_time, 1),
+                "timeline": risk_timeline,
+            },
             "processing_fps": round(meter.fps, 2),
             "annotated_video": str(annotated_path),
             "annotated_video_h264": str(h264_path) if h264_path else None,

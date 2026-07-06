@@ -24,9 +24,21 @@ Every safety event is persisted to a SQLite event store with screenshot evidence
 
 ## Roadmap
 
-- [x] **Phase 1 — Core MVP** (this release)
-- [ ] **Phase 2 — Depth**: worker–vehicle proximity in real-world meters (camera calibration + ground-plane homography), 0–100 Safety Risk Score, RAG-based AI safety assistant over the event history
+- [x] **Phase 1 — Core MVP**
+- [x] **Phase 2 — Depth**: worker–vehicle proximity in real-world meters (camera calibration + ground-plane homography), 0–100 Safety Risk Score, RAG-based AI safety assistant over the event history
 - [ ] **Phase 3 — Standout engineering**: cross-camera Re-Identification, ONNX/TensorRT edge optimization with measured FPS/latency/accuracy benchmarks, temporal behavior classifier
+
+### Phase 2 highlights
+
+| Feature | How it works |
+|---------|--------------|
+| **Calibrated proximity** | A ground-plane homography (calibrated once per camera with `scripts/calibrate_camera.py`) converts pixel positions to real-world meters — so "forklift within 1.5 m of Worker #1" means actual meters, not misleading pixel distance. Two debounced risk tiers (warning ≤5 m, critical ≤2 m) with per-pair cooldowns and near-miss counting |
+| **Safety Risk Score (0–100)** | Every event adds its configured weight, decaying linearly over a rolling window — the score spikes on incidents and cools as the site behaves. Bands: 0–30 Safe · 31–60 Moderate · 61–80 High · 81–100 Critical. Shown live on the video HUD, plotted in the dashboard, summarized in the PDF |
+| **AI Safety Assistant (RAG)** | Ask questions in plain language ("How many helmet violations today?"). Exact numbers come from SQL aggregates; relevant incidents come from semantic search (sentence-transformers + FAISS); Claude synthesizes the grounded answer. Works in retrieval-only mode without an API key |
+
+**Proximity detection in action** (distance lines in real meters, critical pairs in red):
+
+![Proximity alert](docs/images/proximity_alert.jpg)
 
 ## Architecture
 
@@ -67,7 +79,9 @@ VisionGuard-Safety-AI/
 ├── src/visionguard/
 │   ├── detection/             # YOLO wrapper, pose estimation, core types
 │   ├── tracking/              # ByteTrack wrapper (IDs, trajectories)
-│   ├── safety/                # PPE / zones / falls rule engines + events
+│   ├── safety/                # PPE / zones / falls / proximity / risk engines
+│   ├── spatial/               # Ground-plane homography (pixels -> meters)
+│   ├── assistant/             # RAG safety assistant (FAISS + Claude)
 │   ├── storage/               # SQLite event store
 │   ├── dashboard/             # Streamlit Safety Command Center
 │   ├── reporting/             # PDF incident report builder
@@ -76,7 +90,8 @@ VisionGuard-Safety-AI/
 ├── scripts/
 │   ├── download_assets.py     # Fetch model weights + sample video
 │   ├── run_pipeline.py        # CLI analysis runner
-│   └── define_zones.py        # Interactive polygon zone editor
+│   ├── define_zones.py        # Interactive polygon zone editor
+│   └── calibrate_camera.py    # Ground-plane calibration (pixels -> meters)
 ├── tests/                     # pytest suite (pure-logic, GPU-free)
 ├── data/                      # Videos & datasets (git-ignored)
 ├── models/                    # Model weights (git-ignored)
@@ -145,7 +160,7 @@ Measured on an RTX 4050 Laptop GPU (6 GB), 1280×720 processing resolution, samp
 | End-to-end processing speed | **25–29 FPS** (detection + pose + tracking + rules + annotation + video encode) |
 | Detection / pose models | YOLO11s (PPE fine-tune) / YOLO11n-pose, both on CUDA |
 | PPE compliance on sample video | 100% — correct: all workers wear helmet + vest (0 false alarms) |
-| Test suite | 37 tests, ~3 s, no GPU required |
+| Test suite | 60 tests, ~3 s, no GPU required |
 
 **Annotated output** — persistent worker IDs, PPE evidence, trajectory trails, live HUD:
 
