@@ -72,7 +72,11 @@ risk_score:
 reid:
   # Appearance-embedding model for cross-camera re-identification (Phase 3).
   embedding_model: "clip-ViT-B-32"
-  similarity_threshold: 0.82   # min cosine similarity to merge two identities
+  # Min cosine similarity to merge two identities. Tuned empirically on the
+  # sample video: uniformed workers (identical vests/helmets) cluster tightly
+  # (different-person pairs reach ~0.93), so the threshold must sit above
+  # that. Lower it for sites with visually distinct clothing.
+  similarity_threshold: 0.93
   crops_per_track: 5           # appearance samples averaged per track
 
 assistant:

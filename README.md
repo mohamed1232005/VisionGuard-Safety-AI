@@ -48,6 +48,12 @@ Every safety event is persisted to a SQLite event store with screenshot evidence
 | **Edge optimization + benchmarks** | `scripts/benchmark.py` exports the detector to ONNX, applies INT8 dynamic quantization, and measures latency/FPS/size across every configuration on real frames (results below) |
 | **Temporal behavior model** | A ~50K-parameter GRU classifies 30-frame pose sequences (walk / bend / **fall**) using translation- and scale-invariant body-centric features. Trained on procedurally generated skeleton sequences (`scripts/train_temporal.py`, reproducible in ~30 s) — an honest, documented stand-in for labeled clips; the featurization and training loop transfer unchanged to real footage |
 
+**Re-ID identity match** — the same worker re-identified across two cameras (crops from both, one global ID):
+
+![Re-ID match](docs/images/reid_identity_match.jpg)
+
+*Honest engineering note:* uniformed crews are the canonical hard case for Re-ID — identical vests and helmets compress everyone into a tight embedding cluster (measured on this video: different-person similarity reaches 0.93). The matching threshold is therefore config-tuned per site, and the demo documents both the successes and the residual merges.
+
 ### Edge deployment benchmarks
 
 Measured on this project's dev machine (RTX 4050 Laptop 6 GB / Intel CPU), single-image inference at 640×640 including pre/post-processing, 80 real video frames per configuration:
