@@ -43,6 +43,9 @@ PPE_CLASSES = frozenset(
 
 # Mapping from the Construction-Hazard-Detection model's labels to our taxonomy.
 # Labels absent from this dict (Mask, Utility Pole, ...) are dropped on purpose.
+# NOTE: the repo documents capitalized names ("Machinery") but the shipped
+# weights embed some labels lowercase ("machinery"), so both spellings are
+# mapped — verified against the actual model.names at load time.
 CONSTRUCTION_MODEL_CLASS_MAP: dict[str, ObjectClass] = {
     "Person": ObjectClass.WORKER,
     "Hardhat": ObjectClass.HELMET,
@@ -50,8 +53,11 @@ CONSTRUCTION_MODEL_CLASS_MAP: dict[str, ObjectClass] = {
     "Safety Vest": ObjectClass.VEST,
     "NO-Safety Vest": ObjectClass.NO_VEST,
     "Machinery": ObjectClass.MACHINERY,
+    "machinery": ObjectClass.MACHINERY,
     "Vehicle": ObjectClass.VEHICLE,
+    "vehicle": ObjectClass.VEHICLE,
     "Safety Cone": ObjectClass.SAFETY_CONE,
+    "safety cone": ObjectClass.SAFETY_CONE,
 }
 
 

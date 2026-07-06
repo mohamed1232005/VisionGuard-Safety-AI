@@ -1,5 +1,26 @@
-# VisionGuard Safety AI — pinned dependencies (Python 3.11).
-# Regenerate pins after adding a package: pip freeze | findstr /i "<name>"
+# VisionGuard Safety AI — pinned dependencies (Python 3.11, Windows/Linux).
+#
+# GPU: torch/torchvision are CUDA 12.1 builds and need the PyTorch index:
+#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu121
+# (cu121 chosen for compatibility with NVIDIA drivers 531+; newer cu126 wheels
+#  fail on driver 537.x with "CUDA error: device busy or unavailable".)
+
+# Deep learning
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
+ultralytics==8.4.89
+
+# Computer vision & tracking
+opencv-python==5.0.0.93
+supervision==0.29.1        # ByteTrack (deprecated upstream; pinned deliberately)
+numpy==2.4.4
+
+# Dashboard & reporting
+streamlit==1.58.0
+plotly==6.8.0
+pandas==3.0.3
+reportlab==5.0.0
+imageio-ffmpeg==0.6.0      # bundled ffmpeg for browser-playable H.264 output
 
 # Core
 PyYAML==6.0.3
