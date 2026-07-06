@@ -69,6 +69,12 @@ risk_score:
     proximity: 10              # medium-risk proximity
     proximity_high: 25         # high-risk proximity (near miss)
 
+reid:
+  # Appearance-embedding model for cross-camera re-identification (Phase 3).
+  embedding_model: "clip-ViT-B-32"
+  similarity_threshold: 0.82   # min cosine similarity to merge two identities
+  crops_per_track: 5           # appearance samples averaged per track
+
 assistant:
   # LLM used to synthesize answers (needs ANTHROPIC_API_KEY in the environment).
   # Without a key the assistant still works in retrieval-only mode.

@@ -115,6 +115,15 @@ class RiskScoreSettings:
 
 
 @dataclass(frozen=True)
+class ReIDSettings:
+    """Cross-camera re-identification settings."""
+
+    embedding_model: str
+    similarity_threshold: float
+    crops_per_track: int
+
+
+@dataclass(frozen=True)
 class AssistantSettings:
     """RAG safety assistant configuration."""
 
@@ -156,6 +165,7 @@ class AppConfig:
     fall: FallSettings
     proximity: ProximitySettings
     risk_score: RiskScoreSettings
+    reid: ReIDSettings
     assistant: AssistantSettings
     events: EventSettings
     output: OutputSettings
@@ -254,6 +264,11 @@ def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> AppConfig:
                 name: float(value)
                 for name, value in raw["risk_score"]["weights"].items()
             },
+        ),
+        reid=ReIDSettings(
+            embedding_model=raw["reid"]["embedding_model"],
+            similarity_threshold=float(raw["reid"]["similarity_threshold"]),
+            crops_per_track=int(raw["reid"]["crops_per_track"]),
         ),
         assistant=AssistantSettings(
             model=raw["assistant"]["model"],
