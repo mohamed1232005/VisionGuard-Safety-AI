@@ -19,7 +19,11 @@ ZONE = Zone(
     polygon=((0.5, 0.5), (1.0, 0.5), (1.0, 1.0), (0.5, 1.0)),
 )
 
-SETTINGS = ZoneSettings(definitions_file=Path("unused.json"), dwell_alert_seconds=2.0)
+SETTINGS = ZoneSettings(
+    definitions_file=Path("unused.json"),
+    dwell_alert_seconds=2.0,
+    reentry_cooldown_seconds=10.0,
+)
 
 
 def worker_at(ground_x: float, ground_y: float, track_id: int = 1) -> TrackedObject:
@@ -64,15 +68,29 @@ def test_dwell_alert_after_threshold() -> None:
     assert monitor.update(3, 3.0, [worker], FRAME_W, FRAME_H) == []  # only once
 
 
-def test_reentry_counts_as_new_intrusion() -> None:
+def test_reentry_after_cooldown_counts_as_new_intrusion() -> None:
     monitor = ZoneMonitor([ZONE], SETTINGS)
 
-    monitor.update(0, 0.0, [worker_at(75, 75)], FRAME_W, FRAME_H)   # in
-    monitor.update(1, 1.0, [worker_at(25, 25)], FRAME_W, FRAME_H)   # out
-    again = monitor.update(2, 2.0, [worker_at(75, 75)], FRAME_W, FRAME_H)
+    monitor.update(0, 0.0, [worker_at(75, 75)], FRAME_W, FRAME_H)    # in
+    monitor.update(1, 5.0, [worker_at(25, 25)], FRAME_W, FRAME_H)    # out
+    again = monitor.update(2, 15.0, [worker_at(75, 75)], FRAME_W, FRAME_H)
 
     assert [e.event_type for e in again] == [EventType.ZONE_INTRUSION]
     assert monitor.stats.intrusions["Test Zone"] == 2
+
+
+def test_boundary_flicker_does_not_spam_alerts() -> None:
+    """A worker hovering at the zone edge alerts once, not per flicker."""
+    monitor = ZoneMonitor([ZONE], SETTINGS)
+
+    events = []
+    for frame in range(20):  # alternate in/out every frame for 2 seconds
+        inside = frame % 2 == 0
+        worker = worker_at(75 if inside else 25, 75 if inside else 25)
+        events += monitor.update(frame, frame * 0.1, [worker], FRAME_W, FRAME_H)
+
+    assert len(events) == 1
+    assert monitor.stats.intrusions["Test Zone"] == 1
 
 
 def test_vehicle_not_restricted_by_worker_zone() -> None:

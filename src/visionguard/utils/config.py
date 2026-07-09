@@ -82,6 +82,7 @@ class ZoneSettings:
 
     definitions_file: Path
     dwell_alert_seconds: float
+    reentry_cooldown_seconds: float
 
 
 @dataclass(frozen=True)
@@ -243,6 +244,9 @@ def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> AppConfig:
         zones=ZoneSettings(
             definitions_file=_resolve(raw["zones"]["definitions_file"]),
             dwell_alert_seconds=float(raw["zones"]["dwell_alert_seconds"]),
+            reentry_cooldown_seconds=float(
+                raw["zones"]["reentry_cooldown_seconds"]
+            ),
         ),
         fall=FallSettings(
             model_path=_resolve(raw["fall"]["model_path"]),

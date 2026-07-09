@@ -193,7 +193,7 @@ Measured on an RTX 4050 Laptop GPU (6 GB), 1280×720 processing resolution, samp
 | End-to-end processing speed | **25–29 FPS** (detection + pose + tracking + rules + annotation + video encode) |
 | Detection / pose models | YOLO11s (PPE fine-tune) / YOLO11n-pose, both on CUDA |
 | PPE compliance on sample video | 100% — correct: all workers wear helmet + vest (0 false alarms) |
-| Test suite | 75 tests, ~6 s, no GPU required |
+| Test suite | 76 tests, ~12 s, no GPU required |
 
 **Annotated output** — persistent worker IDs, PPE evidence, trajectory trails, live HUD:
 
@@ -202,6 +202,23 @@ Measured on an RTX 4050 Laptop GPU (6 GB), 1280×720 processing resolution, samp
 **Worker-position danger heatmap** (accumulated over the full video):
 
 ![Danger heatmap](docs/images/danger_heatmap.png)
+
+## Feature verification suite
+
+Beyond unit tests, every alarm-raising feature is verified on real footage (all clips fetched by `scripts/download_assets.py`; analyze any of them with `python scripts/run_pipeline.py --source data/videos/<name>.mp4`):
+
+| Test video | What it proves | Result |
+|---|---|---|
+| `construction_steelwork.mp4` | Detection, tracking, PPE compliance on a *compliant* crew (no false alarms), proximity vs. crane machinery | 100% compliance, 0 false PPE alerts; 2 near-misses flagged |
+| `test_person_down.mp4` | The full alarm chain on one clip | Zone intrusion → no-vest → no-helmet → **FALL (critical)**; compliance 0%; risk score peaks 70/100 |
+| `test_ppe_digging.mp4` | Zone entry alerts + boundary-flicker debouncing | 2 clean intrusion alerts (regression-tested after this video exposed an alert-spam bug) |
+| `test_forklift.mp4` | Vehicle/machinery detection + proximity mechanics indoors | Forklifts detected, proximity events raised |
+
+**Fall detection firing** (zone overlay, missing-PPE evidence, and the confirmed-fall banner):
+
+![Fall detected](docs/images/fall_detected.jpg)
+
+*Field notes from this suite:* it caught a real bug (zone re-entry alert spam from boundary flicker — fixed with a config-driven cooldown and a regression test), and it demonstrates that zones and camera calibration are **per-camera config**: the forklift clip reuses the steelwork camera's calibration, so its "meters" are not meaningful until that camera is calibrated — exactly why `calibrate_camera.py` exists.
 
 ## Models & attribution
 

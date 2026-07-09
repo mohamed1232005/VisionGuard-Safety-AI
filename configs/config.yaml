@@ -41,7 +41,9 @@ ppe:
 
 zones:
   definitions_file: "configs/zones.json"  # created with scripts/define_zones.py
-  dwell_alert_seconds: 8.0   # loitering inside a zone this long raises a second alert
+  dwell_alert_seconds: 8.0        # loitering inside a zone this long raises a second alert
+  reentry_cooldown_seconds: 10.0  # ignore re-entries of the same worker within this window
+                                  # (kills alert spam when someone hovers at the boundary)
 
 fall:
   model_path: "models/yolo11n-pose.pt"

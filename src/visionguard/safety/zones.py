@@ -118,6 +118,9 @@ class ZoneMonitor:
         self._zones = zones
         self._settings = settings
         self._presence: dict[tuple[str, int], _Presence] = {}
+        # Survives exit: quick re-entries (boundary flicker, track blips)
+        # within the cooldown don't re-alert.
+        self._last_alert: dict[tuple[str, int], float] = {}
         self.stats = ZoneStats()
 
     @property
@@ -150,6 +153,10 @@ class ZoneMonitor:
 
                 if presence is None:  # new entry
                     self._presence[key] = _Presence(entered_at=video_time)
+                    last = self._last_alert.get(key, float("-inf"))
+                    if video_time - last < self._settings.reentry_cooldown_seconds:
+                        continue  # boundary flicker — already alerted recently
+                    self._last_alert[key] = video_time
                     self.stats.intrusions[zone.name] = (
                         self.stats.intrusions.get(zone.name, 0) + 1
                     )

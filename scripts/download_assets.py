@@ -31,6 +31,20 @@ ASSETS: dict[str, str] = {
         "https://videos.pexels.com/video-files/11798561"
         "/11798561-hd_1920_1080_50fps.mp4"
     ),
+    # Feature-test videos (Pexels free license):
+    # PPE violations + fall ("person down" emergency), by Ron Lach.
+    "data/videos/test_person_down.mp4": (
+        "https://www.pexels.com/download/video/8526604/"
+    ),
+    # Workers digging (zone-intrusion test), by K.
+    "data/videos/test_ppe_digging.mp4": (
+        "https://videos.pexels.com/video-files/3967264"
+        "/3967264-uhd_2732_1440_24fps.mp4"
+    ),
+    # Forklift in warehouse (vehicle detection + proximity test), by kelly.
+    "data/videos/test_forklift.mp4": (
+        "https://www.pexels.com/download/video/6079419/"
+    ),
 }
 
 
