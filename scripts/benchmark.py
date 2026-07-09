@@ -94,9 +94,15 @@ def main() -> None:
     results: list[tuple[str, float, dict]] = []
 
     # ---- PyTorch (Ultralytics) ---------------------------------------- #
-    from ultralytics import YOLO
+    import logging as _logging
 
     import torch
+    from ultralytics import YOLO
+    from ultralytics.utils import LOGGER as _ULTRA_LOGGER
+
+    # Ultralytics warns once per frame about the deprecated (but still
+    # functional) `half` argument — silence warnings during timing loops.
+    _ULTRA_LOGGER.setLevel(_logging.ERROR)
 
     model = YOLO(str(weights))
     if torch.cuda.is_available():
