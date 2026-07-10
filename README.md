@@ -8,6 +8,9 @@ VisionGuard answers that question **continuously, from ordinary CCTV footage**. 
 
 Built end-to-end in three phases — perception → spatial & temporal reasoning → risk analytics and product surfaces — with **13 features, 76 automated tests, measured performance benchmarks, and live-footage verification** at every step.
 
+> ### 🚀 [**Try the live demo →**](https://huggingface.co/spaces/khatem/VisionGuard-Safety-AI)
+> The Safety Command Center running on Hugging Face Spaces, with two pre-analyzed videos (a construction site and a person-down emergency) ready to explore — alerts, risk timeline, heatmap, PDF reports, and the AI assistant.
+
 ![Annotated frame](docs/images/annotated_frame.jpg)
 
 | 13 features | 76 tests | 25–29 FPS end-to-end | 5 deployment configs benchmarked | 4-video live verification |
