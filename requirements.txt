@@ -1,0 +1,16 @@
+# VisionGuard on Hugging Face Spaces (CPU) — unpinned CUDA extras removed.
+torch
+torchvision
+ultralytics
+supervision==0.29.1
+opencv-python-headless
+numpy
+streamlit
+plotly
+pandas
+reportlab
+imageio-ffmpeg
+PyYAML
+faiss-cpu
+sentence-transformers
+anthropic
