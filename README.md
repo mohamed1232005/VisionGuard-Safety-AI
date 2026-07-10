@@ -23,6 +23,7 @@ It detects PPE violations, restricted-zone intrusions, falls, and unsafe worker�
 
 - [Why This Project Stands Out](#-why-this-project-stands-out)
 - [Feature Overview](#-feature-overview-13-features-3-phases)
+- [Dashboard Tour](#-dashboard-tour)
 - [Results & Evidence](#-results--evidence)
 - [Edge Deployment Benchmarks](#-edge-deployment-benchmarks)
 - [System Architecture](#-system-architecture)
@@ -83,6 +84,36 @@ Most portfolio CV projects stop at "YOLO draws boxes." VisionGuard is built as a
 | 11 | 👤 **Cross-camera Re-ID** | Each worker's appearance is embedded (CLIP image encoder); an identity gallery matches tracks against running-mean centroids by cosine similarity, so one worker keeps one **global ID** across cameras and occlusions. Demo script produces visual proof montages |
 | 12 | ⚡ **Edge optimization + benchmarks** | ONNX export + INT8 dynamic quantization, with measured latency/FPS/size across five configurations on real frames ([table below](#-edge-deployment-benchmarks)) |
 | 13 | 🧠 **Temporal behavior model** | A ~50K-parameter GRU classifies 30-frame pose sequences (walk / bend / **fall**) using translation- and scale-invariant body-centric features. Trained on procedurally generated skeleton sequences in ~30 s — a transparent stand-in whose featurization and training loop transfer unchanged to real labeled clips |
+
+---
+
+## 🖥️ Dashboard Tour
+
+A walkthrough of the Safety Command Center analyzing `construction_steelwork.mp4` with a user-drawn restricted zone (all screenshots captured live from the running app).
+
+**📹 Annotated video** — live playback with worker IDs, PPE evidence, the restricted zone, an alert banner, and the risk-score HUD. The KPI row on top condenses the whole run: peak risk, compliance, event count, workers seen, most dangerous zone, top violation:
+
+![Dashboard — annotated video](docs/images/dashboard_annotated_video.png)
+
+**🚨 Alerts** — every incident with severity, video timestamp, type, description, and detector confidence; filterable by severity, with click-through evidence screenshots below:
+
+![Dashboard — alerts](docs/images/dashboard_alerts.png)
+
+**📈 Timeline** — the 0–100 risk score over the video (area chart) and the event histogram by type:
+
+![Dashboard — timeline](docs/images/dashboard_timeline.png)
+
+**🔥 Heatmap** — where workers actually spent their time, overlaid on the scene:
+
+![Dashboard — heatmap](docs/images/dashboard_heatmap.png)
+
+**📄 Report** — one click generates the PDF incident report (summary + evidence pages) with a download button:
+
+![Dashboard — report](docs/images/dashboard_report.png)
+
+**🤖 Assistant** — plain-language questions answered from the incident database (exact counts from SQL, incidents from semantic retrieval):
+
+![Dashboard — assistant](docs/images/dashboard_assistant.png)
 
 ---
 
