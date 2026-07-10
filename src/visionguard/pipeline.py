@@ -30,7 +30,7 @@ from visionguard.safety.zones import ZoneMonitor, load_zones
 from visionguard.spatial.homography import load_ground_plane
 from visionguard.storage.event_store import EventStore
 from visionguard.tracking.tracker import Tracker
-from visionguard.utils.config import AppConfig
+from visionguard.utils.config import AppConfig, portable_path
 from visionguard.utils.drawing import (
     draw_alert_banner,
     draw_hud,
@@ -185,7 +185,7 @@ class SafetyPipeline:
                     # ---- Event persistence (screenshot AFTER annotation,
                     #      so evidence images show boxes and IDs) ---------- #
                     for event in new_events:
-                        event.screenshot_path = str(
+                        event.screenshot_path = portable_path(
                             self._save_screenshot(frame, event, screenshots_dir)
                         )
                         self._store.add_event(run_id, event)
@@ -264,9 +264,9 @@ class SafetyPipeline:
                 "timeline": risk_timeline,
             },
             "processing_fps": round(meter.fps, 2),
-            "annotated_video": str(annotated_path),
-            "annotated_video_h264": str(h264_path) if h264_path else None,
-            "heatmap_image": str(heatmap_path) if heatmap_path else None,
+            "annotated_video": portable_path(annotated_path),
+            "annotated_video_h264": portable_path(h264_path) if h264_path else None,
+            "heatmap_image": portable_path(heatmap_path) if heatmap_path else None,
         }
         self._store.finish_run(
             run_id,

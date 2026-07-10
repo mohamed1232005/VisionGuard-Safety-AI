@@ -181,6 +181,27 @@ def _resolve(path_value: str) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
+def portable_path(path: Path | str) -> str:
+    """Store-friendly form of an output path: relative to the project root.
+
+    Keeps databases portable across machines/OSes (a Space or another dev
+    machine resolves them against its own project root). Paths outside the
+    project fall back to their absolute form.
+    """
+    try:
+        return Path(path).relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def resolve_output_path(value: str | None) -> Path | None:
+    """Inverse of :func:`portable_path`: stored string -> usable Path."""
+    if not value:
+        return None
+    path = Path(value)
+    return path if path.is_absolute() else PROJECT_ROOT / path
+
+
 def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> AppConfig:
     """Load and validate the YAML config into an :class:`AppConfig`.
 

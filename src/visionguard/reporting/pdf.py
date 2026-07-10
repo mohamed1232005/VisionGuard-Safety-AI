@@ -184,7 +184,9 @@ class IncidentReportBuilder:
         )
 
         section: list = [heading, details, Spacer(1, 0.3 * cm)]
-        screenshot = Path(event.screenshot_path) if event.screenshot_path else None
+        from visionguard.utils.config import resolve_output_path
+
+        screenshot = resolve_output_path(event.screenshot_path)
         if screenshot and screenshot.exists():
             section.append(Image(str(screenshot), width=15 * cm, height=8.4 * cm))
             section.append(Spacer(1, 0.3 * cm))

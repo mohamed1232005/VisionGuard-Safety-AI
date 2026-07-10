@@ -20,7 +20,7 @@ from visionguard.assistant.assistant import SafetyAssistant
 from visionguard.pipeline import SafetyPipeline
 from visionguard.reporting.pdf import IncidentReportBuilder
 from visionguard.storage.event_store import EventStore, RunRecord
-from visionguard.utils.config import AppConfig, load_config
+from visionguard.utils.config import AppConfig, load_config, resolve_output_path
 from visionguard.utils.logger import setup_logging
 
 st.set_page_config(
@@ -138,8 +138,10 @@ video_tab, alerts_tab, timeline_tab, heatmap_tab, report_tab, assistant_tab = st
 )
 
 with video_tab:
-    video_path = stats.get("annotated_video_h264") or stats.get("annotated_video")
-    if video_path and Path(video_path).exists():
+    video_path = resolve_output_path(
+        stats.get("annotated_video_h264") or stats.get("annotated_video")
+    )
+    if video_path and video_path.exists():
         st.video(str(video_path))
         st.caption(
             f"Processed at {stats.get('processing_fps', '?')} FPS · "
@@ -181,8 +183,9 @@ with alerts_tab:
                 with_shots,
                 format_func=lambda e: f"[{e.timestamp_str()}] {e.description}",
             )
-            if Path(chosen.screenshot_path).exists():
-                st.image(chosen.screenshot_path, width="stretch")
+            evidence_path = resolve_output_path(chosen.screenshot_path)
+            if evidence_path and evidence_path.exists():
+                st.image(str(evidence_path), width="stretch")
 
 with timeline_tab:
     risk_timeline = risk.get("timeline") or []
@@ -217,10 +220,10 @@ with timeline_tab:
         st.plotly_chart(figure, width="stretch")
 
 with heatmap_tab:
-    heatmap_path = stats.get("heatmap_image")
-    if heatmap_path and Path(heatmap_path).exists():
+    heatmap_path = resolve_output_path(stats.get("heatmap_image"))
+    if heatmap_path and heatmap_path.exists():
         st.image(
-            heatmap_path,
+            str(heatmap_path),
             caption="Worker position density (hot = heavily used areas)",
             width="stretch",
         )

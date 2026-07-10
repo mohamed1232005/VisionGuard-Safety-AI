@@ -28,6 +28,9 @@ outputs/**
 !models/**/.gitkeep
 !outputs/**/.gitkeep
 
+# Deployment bundles (pushed to their own remotes, e.g. HF Spaces)
+deploy/
+
 # IDE / OS noise
 .vscode/
 .idea/
